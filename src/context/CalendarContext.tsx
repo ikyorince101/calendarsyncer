@@ -57,11 +57,19 @@ export const CalendarProvider: React.FC<{ children: ReactNode }> = ({ children }
   const syncEvents = async () => {
     setLoading(true);
     try {
-      // This will be implemented with actual API calls
-      // For now, it's a placeholder
-      console.log('Syncing events...');
+      // Import SyncService dynamically to avoid circular dependencies
+      const { SyncService } = await import('../services/SyncService');
+      
+      // Sync all calendar and email accounts
+      const syncedEvents = await SyncService.syncAll(accounts, emailAccounts);
+      
+      // Update events state with synced events
+      setEvents(syncedEvents);
+      
+      console.log(`Successfully synced ${syncedEvents.length} events`);
     } catch (error) {
       console.error('Error syncing events:', error);
+      throw error;
     } finally {
       setLoading(false);
     }
