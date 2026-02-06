@@ -1,4 +1,5 @@
 import { CalendarEvent } from '../types';
+import { parse } from 'date-fns';
 
 /**
  * Parse email content to extract calendar event information
@@ -52,7 +53,27 @@ export function parseEventFromEmail(subject: string, body: string): CalendarEven
   // If we found at least a date, try to create an event
   if (dates.length > 0) {
     try {
-      const startDate = new Date(dates[0]);
+      // Try to parse date with date-fns for consistent handling
+      let startDate: Date;
+      const dateStr = dates[0];
+      
+      // Try different date formats
+      if (/\d{4}-\d{2}-\d{2}/.test(dateStr)) {
+        // ISO format YYYY-MM-DD
+        startDate = parse(dateStr, 'yyyy-MM-dd', new Date());
+      } else if (/\d{1,2}\/\d{1,2}\/\d{4}/.test(dateStr)) {
+        // Assume MM/DD/YYYY format (US standard)
+        startDate = parse(dateStr, 'MM/dd/yyyy', new Date());
+      } else {
+        // Try parsing as natural language date
+        startDate = new Date(dateStr);
+      }
+      
+      // Validate the parsed date
+      if (isNaN(startDate.getTime())) {
+        console.warn('Invalid date parsed:', dateStr);
+        return null;
+      }
       
       // If we have a time, try to set it
       if (times.length > 0) {
