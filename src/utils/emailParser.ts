@@ -19,7 +19,7 @@ export function parseEventFromEmail(subject: string, body: string): CalendarEven
   ];
 
   const locationPatterns = [
-    /(?:at|@|location:?)\s+([^\n,.]+)/gi,
+    /(?:at|@|in|location:?)\s+([^\n,.]+)/gi,
     /(?:venue:?)\s+([^\n,.]+)/gi,
   ];
 
@@ -46,7 +46,11 @@ export function parseEventFromEmail(subject: string, body: string): CalendarEven
   locationPatterns.forEach(pattern => {
     const matches = [...body.matchAll(pattern)];
     if (matches) {
-      locations.push(...matches.map(m => m[1]?.trim()).filter(Boolean));
+      locations.push(
+        ...matches
+          .map(m => m[1]?.trim())
+          .filter(loc => loc && !/\d{1,2}:\d{2}/.test(loc))
+      );
     }
   });
 
@@ -122,7 +126,7 @@ export function isLikelyEvent(subject: string, body: string): boolean {
   ];
 
   const text = `${subject} ${body}`.toLowerCase();
-  return eventKeywords.some(keyword => text.includes(keyword));
+  return eventKeywords.some(keyword => new RegExp(`\\b${keyword}\\b`, 'i').test(text));
 }
 
 /**
