@@ -18,8 +18,10 @@ export function parseEventFromEmail(subject: string, body: string): CalendarEven
     /(\d{1,2}:\d{2})/g,
   ];
 
+  const TIME_PATTERN = /\d{1,2}:\d{2}/;
+
   const locationPatterns = [
-    /(?:at|@|location:?)\s+([^\n,.]+)/gi,
+    /(?:at|@|in|location:?)\s+([^\n,.]+)/gi,
     /(?:venue:?)\s+([^\n,.]+)/gi,
   ];
 
@@ -46,7 +48,11 @@ export function parseEventFromEmail(subject: string, body: string): CalendarEven
   locationPatterns.forEach(pattern => {
     const matches = [...body.matchAll(pattern)];
     if (matches) {
-      locations.push(...matches.map(m => m[1]?.trim()).filter(Boolean));
+      locations.push(
+        ...matches
+          .map(m => m[1]?.trim())
+          .filter(loc => loc && !TIME_PATTERN.test(loc))
+      );
     }
   });
 
@@ -120,9 +126,12 @@ export function isLikelyEvent(subject: string, body: string): boolean {
     'meeting', 'conference', 'appointment', 'event', 'reminder',
     'invitation', 'rsvp', 'schedule', 'calendar', 'date', 'time'
   ];
+  const keywordRegexes = eventKeywords.map(
+    keyword => new RegExp(`\\b${keyword}\\b`, 'i')
+  );
 
   const text = `${subject} ${body}`.toLowerCase();
-  return eventKeywords.some(keyword => text.includes(keyword));
+  return keywordRegexes.some(regex => regex.test(text));
 }
 
 /**
